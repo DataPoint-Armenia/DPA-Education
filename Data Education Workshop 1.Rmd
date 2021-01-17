@@ -1,0 +1,74 @@
+---
+title: "Data Education Workshop 1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+###Introduction
+The Center for Systems Science and Engineering at Johns Hopkins was among the earliest to collect and publish global data related to the COVID-19 pandemic. The data used for their [reporting dashboard] (https://coronavirus.jhu.edu/map.html), aggregated from multiple sources and updated daily, is freely available on [Github] (https://github.com/CSSEGISandData/COVID-19). 
+
+We will review a basic overview of the following steps in data analysis: 
+1. Data Import and Cleaning
+2. Exploratory Data Analysis 
+3. Visualization 
+4. Regression and Classification
+
+####Setting Up R: 
+We will go over this in more detail in our next workshop which will help you get oriented and set up! 
+1. Create New Project (Via Github Repository) & Establish Working Directory 
+2. Create a File (RMD)
+3. Load Packages Chunk
+
+####Load Packages:
+```{r}
+library(tidyverse)
+library(lubridate)
+library(zoo)
+library(maps)
+library(tidyr)
+library(ggplot2)
+library(ggthemes)
+```
+
+####Data Import and Cleaning
+Step 0: Finding Data (Look for CSV Files!) 
+Step 1: Read in data for  (Make sure you either use raw data link if available or import your CSV file into the same working directory as your Rmd file.) 
+Step 2: View Data & Decide What Needs to be "Cleaned"  
+Step 3: Data Cleaning! 
+
+```{r}
+cases <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+``` 
+
+Reshape the data to long format, so that instead of having many columns of cases corresponding to a different date, you have one column that stores the cases and one column that stores the dates. 
+
+```{r}
+cases_long <- cases %>% gather(date, cases, "1/22/20":"10/31/20") 
+```
+
+Convert the new date column to be a date type instead of a character type. 
+
+```{r}
+#Check Class
+class(cases_long$date)
+
+cases_long$date <-as.Date(cases_long$date, "%m/%d/%y")
+
+#Re-Check Class
+class(cases_long$date)
+```
+
+This dataset keeps track of the number of confirmed cases reported for states, provinces, and other sub-regions within a given country but we just want total country data. This data frame also still includes a bunch of other information we're not interested in (Latitude Longitude Etc...) 
+
+We can create a new data frame with only what we're interested in: country name, date, and the total number of cases in the country on that day. 
+
+We can do this by summing up the cases across all of the states/provinces within each country and date.
+
+```{r}
+
+
+```
+
