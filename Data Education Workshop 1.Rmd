@@ -4,24 +4,24 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, results = FALSE, message = FALSE)
 ```
 
-###Introduction
-The Center for Systems Science and Engineering at Johns Hopkins was among the earliest to collect and publish global data related to the COVID-19 pandemic. The data used for their [reporting dashboard] (https://coronavirus.jhu.edu/map.html), aggregated from multiple sources and updated daily, is freely available on [Github] (https://github.com/CSSEGISandData/COVID-19). 
+### Introduction
+The Center for Systems Science and Engineering at Johns Hopkins was among the earliest to collect and publish global data related to the COVID-19 pandemic. The data used for their [reporting dashboard](https://coronavirus.jhu.edu/map.html), aggregated from multiple sources and updated daily, is freely available on [Github](https://github.com/CSSEGISandData/COVID-19). 
 
 We will review a basic overview of the following steps in data analysis: 
 1. Data Import and Cleaning
 2. Exploratory Data Analysis & Visualization 
 3. Regression and Classification
 
-####Setting Up R: 
+#### Setting Up R:
 We will go over this in more detail in our next workshop which will help you get oriented and set up! 
 1. Create New Project (Via Github Repository) & Establish Working Directory 
 2. Create a File (RMD)
 3. Load Packages Chunk
 
-####Load Packages:
+#### Load Packages:
 ```{r}
 library(tidyverse)
 library(lubridate)
@@ -32,7 +32,7 @@ library(ggplot2)
 library(ggthemes)
 ```
 
-####Data Import and Cleaning
+#### Data Import and Cleaning
 Step 0: Finding Data (Look for CSV Files!) 
 Step 1: Read in data for  (Make sure you either use raw data link if available or import your CSV file into the same working directory as your Rmd file.) 
 Step 2: View Data & Decide What Needs to be "Cleaned"  
@@ -48,7 +48,7 @@ Reshape the data to long format, so that instead of having many columns of cases
 ```{r}
 cases_long <- cases %>% gather(date, cases, "1/22/20":"10/31/20") 
 #Along the way you can "View" your data set, but be sure to remove the "View" code from your final RMD before you knit it into an HTML otherwise the whole table will print in the HTML. 
-View(cases_long)
+#View
 ```
 
 Convert the new date column to be a date class instead of a character class. 
@@ -62,7 +62,6 @@ cases_long$date <-as.Date(cases_long$date, "%m/%d/%y")
 #Re-Check Class
 class(cases_long$date)
 class(cases_long$cases)
-
 ```
 
 This data set keeps track of the number of confirmed cases reported for states, provinces, and other sub-regions within a given country but we just want total country data. This data frame also still includes a bunch of other information we're not interested in (Latitude Longitude Etc...) 
@@ -74,12 +73,12 @@ We can do this by summing up the cases across all of the states/provinces within
 ```{r}
 cases_long_country <- cases_long %>% rename(country ="Country/Region") %>%  group_by(country, date) %>% summarize(cases=sum(cases), .groups = "drop") 
 
-View(cases_long_country)
+#View
 ```
 
 So now we're ready for the fun part!
 
-####Exploratory Data Analysis and Visualizations
+#### Exploratory Data Analysis and Visualizations
 Step 1: What do we want to explore? 
 Step 2: Whats the best way to visualize it? 
 Step 3: Repeat Steps 1 and 2 Forever
@@ -87,6 +86,7 @@ Step 3: Repeat Steps 1 and 2 Forever
 So lets say we want to look at only a few countries first to compare their COVID Cases: Armenia, Azerbaijan, Turkey, Georgia, Russia. 
 
 Perhaps the best way to visualize this is a line plot with cases on the Y axis and date on the X axis. But first, we have to restrict our data to only those countries we're interested in including in our plot.
+
 ```{r}
 countries = c("Armenia", "Azerbaijan","Turkey","Georgia","Russia")
 plot1data <- cases_long_country %>% filter(country %in% countries)
@@ -100,6 +100,7 @@ countries = c("Armenia", "Azerbaijan","Turkey","Georgia","Russia")
 plot1data <- cases_long_country %>% filter(country %in% countries)
 ggplot(plot1data, aes(x=date, y=cases, color=country)) + geom_line() + scale_y_log10() + scale_x_date(date_breaks = "1 month", date_labels = "%b") + labs(x = "Date", y = "Cases (Log Scale)", title = "Total Confirmed Cases Over Time (Log Scale)") + guides(color = guide_legend(title="Country"))
 ```
+
 Many public health professionals have been measuring new confirmed cases over a 7 day period (or "7 Day Rolling Averages").
 Lets try to make a new variable that calculates that.We will define the seven-day rolling average of new cases as the average of the new cases reported on a given day, the three days before, and the three days after. It’s a “rolling” average because the window of seven days moves along as you calculate the averages for new dates.
 
@@ -107,10 +108,11 @@ Lets try to make a new variable that calculates that.We will define the seven-da
 cases_long_country <- cases_long_country %>% group_by(country) %>% arrange(date) %>%
 mutate(new_cases = cases - lag(cases), new_cases_7dayavg = rollmean(new_cases, k = 7, fill = NA)) %>% ungroup()
 
-View(cases_long_country)
+#View
 ```
 
 Let's Plot It! 
+
 ```{r}
 ggplot(cases_long_country %>% filter(country %in% countries), aes(x=date, y=new_cases_7dayavg, color=country)) +  geom_line() + scale_x_date(date_breaks = "1 month", date_labels = "%b") + labs(x = "Date", y = "New Cases (7-day Rolling Average)", title = "New Confirmed Cases Over Time") + guides(color = guide_legend(title="Country"))
 ```
@@ -121,7 +123,7 @@ Since these countries all have different population sizes, it might be more info
 #Reading in the population data
 population_data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv")
 
-View(population_data)
+#View
 ``` 
 
 Back to data cleaning for a minute here: Ultimately we just want the population information in our original case data set that we've been working with this entire time. So let's try to join both data frames together, but before we do that, lets get rid of everything we don't need from this new population data set. 
@@ -131,28 +133,33 @@ First, we create a new data frame that stores only the country-level populations
 ```{r}
 population_data <- population_data %>% subset(is.na(Province_State)) %>% rename(country="Country_Region", population ="Population") %>% select(country, population)
 
-View(population_data)
+#View
 ```
 
 Time to join the two data frames (yay!)
+
 ```{r}
 finaldata <- left_join(cases_long_country, population_data, by = "country")
-View(finaldata)
+#View
 ```
 
 Now its time to account for population in our data analysis. Let's do this by creating a new variable that calculates the seven-day rolling average of new cases per million.
 
 ```{r}
 finaldata <- finaldata %>% mutate(rollingavg_per_million = 1e6*new_cases_7dayavg/population)
-View(finaldata)
+#View
 ```
 
 Let's Plot It Round 4! 
+
 ```{r}
 ggplot(finaldata %>% filter(country %in% countries), aes(x=date, y=rollingavg_per_million, color=country)) +  geom_line() + scale_x_date(date_breaks = "1 month", date_labels = "%b") + labs(x = "Date", y = "New Cases Per Million (7-day Rolling Average)", title = "New Cases Per Million Over Time") + guides(color = guide_legend(title="Country"))
 ```
+
 What are some other cool ways you can visualize in R? 
+
 *Heat Maps!* 
+
 ```{r}
 # Pull out world map data frame
 world_map = map_data("world")
@@ -206,8 +213,9 @@ ggplot(finaldata_map, aes(x = long, y = lat, group = group)) + geom_polygon(aes(
   labs(title = "New confirmed cases per million on October 18, 2020") 
 ```
 
-####Regression & Classification 
-```{r}
+#### Regression & Classification 
 
+```{r}
+#TBD
 ```
 
