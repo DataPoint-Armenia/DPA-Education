@@ -3,11 +3,8 @@ title: "Data Education Workshop 1"
 subtitle: "Copyright 2021 Lara Rostomian All Rights Reserved"
 output: 
   html_document:
-    toc: true #Set table of content to be true
-    toc_depth: 3  # up to three depths of headings (specified by #, ## and ###)
-    number_sections: true  ## if you want number sections at each table header
-    theme: united  # many options for theme, this one is my favorite.
-    highlight: tango  # specifies the syntax highlighting style
+    toc: true 
+    toc_depth: 3
 ---
 
 ## Introduction
@@ -18,7 +15,7 @@ We will review a basic overview of the following steps in data analysis:
 
 1. Data Import and Cleaning \  
 2. Exploratory Data Analysis & Visualization \    
-3. Regression and Classification \  
+3. Predictive Modeling: Regression and Classification \  
 
 ### Setting Up R:
 
@@ -31,14 +28,16 @@ We will go over this in more detail in our next workshop which will help you get
 ### Load Packages:
 
 ```{r}
-library(tidyr) # Getting your dataset in a tidy format
-library(tidyverse) # Manipulating data
-library(lubridate) # library for date manipulatin
-library(zoo) # library for date manipulatin
-library(maps) # Mapping for 
-library(ggplot2) # For visualizations 
-library(ggthemes) # Themes for the ggplot visualization 
-library(stargazer) # for pretty regression output
+library(tidyr) # Getting Data in Tidy Format
+library(tidyverse) # Manipulating Data
+library(lubridate) # Manipulating Data
+library(zoo) # Manipulating Data
+library(maps) # Mapping Visualizations  
+library(ggplot2) # All Visualizations 
+library(ggthemes) # All Visualizations Themes 
+library(stargazer) # Pretty Regression Output
+library(forecast) # Forecast / Predictive Modeling
+
 ```
 
 ## Data Import and Cleaning
@@ -58,7 +57,6 @@ Reshape the data to long format, so that instead of having many columns of cases
 ```{r}
 cases_long <- cases %>% gather(date, cases, "1/22/20":"10/31/20") 
 #Along the way you can "View" your data set, but be sure to remove the "View" code from your final RMD before you knit it into an HTML otherwise the whole table will print in the HTML. 
-#View
 ```
 
 Convert the new date column to be a date class instead of a character class. 
@@ -82,8 +80,6 @@ We can do this by summing up the cases across all of the states/provinces within
 
 ```{r}
 cases_long_country <- cases_long %>% rename(country ="Country/Region") %>%  group_by(country, date) %>% summarize(cases=sum(cases), .groups = "drop") 
-
-#View
 ```
 
 So now we're ready for the fun part!
@@ -118,8 +114,6 @@ Lets try to make a new variable that calculates that.We will define the seven-da
 ```{r}
 cases_long_country <- cases_long_country %>% group_by(country) %>% arrange(date) %>%
 mutate(new_cases = cases - lag(cases), new_cases_7dayavg = rollmean(new_cases, k = 7, fill = NA)) %>% ungroup()
-
-#View
 ```
 
 Let's Plot It! 
@@ -133,8 +127,6 @@ Since these countries all have different population sizes, it might be more info
 ```{r}
 #Reading in the population data
 population_data <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/UID_ISO_FIPS_LookUp_Table.csv")
-
-#View
 ``` 
 
 Back to data cleaning for a minute here: Ultimately we just want the population information in our original case data set that we've been working with this entire time. So let's try to join both data frames together, but before we do that, lets get rid of everything we don't need from this new population data set. 
@@ -143,22 +135,18 @@ First, we create a new data frame that stores only the country-level populations
 
 ```{r}
 population_data <- population_data %>% subset(is.na(Province_State)) %>% rename(country="Country_Region", population ="Population") %>% select(country, population)
-
-#View
 ```
 
 Time to join the two data frames (yay!)
 
 ```{r}
 finaldata <- left_join(cases_long_country, population_data, by = "country")
-#View
 ```
 
 Now its time to account for population in our data analysis. Let's do this by creating a new variable that calculates the seven-day rolling average of new cases per million.
 
 ```{r}
 finaldata <- finaldata %>% mutate(rollingavg_per_million = 1e6*new_cases_7dayavg/population)
-#View
 ```
 
 Let's Plot It Round 4! 
@@ -224,216 +212,60 @@ ggplot(finaldata_map, aes(x = long, y = lat, group = group)) + geom_polygon(aes(
   labs(title = "New confirmed cases per million on October 18, 2020") 
 ```
 
-## Regression & Classification 
+## Predecitive Modeling: Regression & Classification 
 
-For this one we are going to use our friendly iris dataset
+*Predictive modeling* is the problem of developing a model using historical data to make a prediction on new data where we do not have the answer. Predictive modeling can be described as the mathematical problem of approximating a mapping function (f) from input variables (X) to output variables (y). *Classification predictive modeling* is the task of approximating a mapping function (f) from input variables (X) to discrete output variables (y). The output variables are often called labels or categories. The mapping function predicts the class or category for a given observation. *Regression predictive modeling* is the task of approximating a mapping function (f) from input variables (X) to a continuous output variable (y). A continuous output variable is a real-value, such as an integer or floating point value. These are often quantities, such as amounts and sizes.
 
+*Information Source:* [Difference Between Classification and Regression in Machine Learning](https://machinelearningmastery.com/classification-versus-regression-in-machine-learning/#:~:text=There%20is%20an%20important%20difference,is%20about%20predicting%20a%20quantity.&text=That%20regression%20is%20the%20problem,quantity%20output%20for%20an%20example.). 
+
+*Data Source:* We will be using “nCOV2019”, an R package developed by Dr. Guangchuang Yu from Southern Medical University and accessible via his public [GitHub](https://github.com/YuLab-SMU/nCov2019). 
+
+*WHO ShinyApp*: [ShinyApp](https://worldhealthorg.shinyapps.io/covid/)
+
+*More Resources:* [Top 100 R resources on Novel COVID-19 Coronavirus](https://statsandr.com/blog/top-r-resources-on-covid-19-coronavirus/)
+
+**Citation**: Tianzhi Wu, Erqiang Hu, Xijin Ge, Guangchuang Yu. [Open-source analytics tools for studying the COVID-19 coronavirus outbreak](https://www.medrxiv.org/content/10.1101/2020.02.25.20027433v2). medRxiv, 2020.02.25.20027433. [doi:](https://doi.org/10.1101/2020.02.25.20027433)
+
+ATTEMPT #1
 ```{r}
-library(normtest)
-require("datasets")
-data("iris")
-str(iris)
-head(iris)
+#https://towardsdatascience.com/visualize-the-pandemic-with-r-covid-19-c3443de3b4e4 
+#Link of Example I'm Following ^ 
 
-require(GGally)
-g1 <- ggpairs(data=iris, title="tips data",
-  mapping=ggplot2::aes(colour = Species),
-  lower=list(combo=wrap("facethist",binwidth=1)))
-g1
+#Loading data from GitHub using the provided information
+library('remotes')
+remotes::install_github("GuangchuangYu/nCov2019", force = TRUE)
+library('nCov2019')
+
+y <- load_nCov2019(lang = 'en')
+data <- y['global']
+#data is the new global data set we're working with.
+
+usdata <- data %>% filter(data$country == "United States" & data$cum_confirm>100) %>% select(time,cum_confirm)
+ggplot(usdata, aes(x=time, y=cum_confirm)) + geom_line() + labs(x = "Date", y = "Cumulative Cases", title = "Total Confirmed Cases in the US Over Time")
+
+#We can see the cases grow at an exponential rate. In this case, we can apply a simple log-linear regression to model and predict the growth. 
+
+case <- ts(usdata$cum_confirm, start = 1, frequency = 1)
+#The function ts is used to create time-series objects.
+
+fit <- tslm(log(case) ~ trend)
+summary(fit)
+
+#tslm is used to fit linear models to time series including trend and seasonality components.
+
+forecast(fit, h=10)
+
+#Not sure where to go from here...
+
 ```
 
-A picture is woorth a thousand words, what are your takings from the visualization above?
+Attempt #2 
+```{r}
+hospitalization_data <- read_csv("Characteristics.csv", skip = 2)
+#Trying to divide this into a test set and train set then create a model to predict hospitalization rate based on given characteristics, but I feel that the data frame needs to be restructured and cleaned up first. 
+```
 
 ### Linear Regression
 
-In statistics and in machine learning, you sometimes are interested in making predictions with variables. You want to know how variable X is able predict Y. In stats terms, you are regressing y on x. 
+### Logitic Regression
 
-Take a look at the visualization below, this plots the Petal Length against the Width, do you think there is any pattern? Any linear relationship?
-
-```{r}
-ggplot(data = iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) + geom_point() + ggtitle("Petal Length vs Petal Width")
-```
-
-Something noticed was that Petal Length and Petal Width a=have a really high correlation of 96.3%. This shows a strong linear relationship. That is great! You can run the most simple case of linear regression in statistics. This is where you draw a line of best fit onto your dataset. 
-
-This is drawn on the whole dataset. What do you think do you think the line would be a good fit? 
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width)) +
-  geom_point(aes(color = Species)) +
-  geom_smooth(method = "lm") + ggtitle("Petal Length vs Petal Width")
-```
-
-You can be even more modular and try to draw based on the different species of iris plants
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
-  geom_point() +
-  geom_smooth(method = "lm") + ggtitle("Petal Length vs Petal Width")
-```
-
-For now, we are just going to ignore the groups when running a basic linear regression. 
-
-```{r}
-lm1 <- lm(Petal.Width ~ Petal.Length, data = iris)
-summary(lm1)
-stargazer(lm1)
-```
-
-So the way that this is modeled is:
-
-$$\hat{y} = intercept \ + B_1X_1  $$
-$$Predicted \  Pedal \ Width = -0.363076 \ + 0.415755X_1  $$
-Going back to the original visualization 
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width)) +
-  geom_point(aes(color = Species)) +
-  geom_smooth(method = "lm") + ggtitle("Petal Length vs Petal Width")
-```
-
-
-$$Predicted \  Pedal \ Width = -0.363076 \ + 0.415755X_1  $$
-
-So let's try to interpret this.  What is the main thing that can be changed from the graph on the X side. The Petal Length, so try increasing the X1 by one point what would be the new equation? Remember the model predicts an average value. Let's try with X = 1,2,3
-
-$$0.052679 = -0.363076 \ + 0.415755*1  $$
-
-$$0.468434 = -0.363076 \ + 0.415755*2  $$
-
-$$0.884189 = -0.363076 \ + 0.415755*3  $$
-
-So in each case, as your X variable changes, you would expect your y variable to change by B1 amount (In this case 0.415755)
-
-Linear regressions are really good when your Y variable is continous meaning the numbers can go from -infinity to infinity. While your X's can be continous or discrete/categorical. When the variable that you want to predict is with respect to categories, you would want to use a logistic regression. 
-
-### Logistic Regression
-
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
-  geom_point() 
-```
-
-Remember back to this graph, say instead of drawing a linear line that best predicts for petal width. Try to see if you can use a linear line to seperate out the between the different species. 
-
-Try it out for:
-- setosa vs versicolor, 
-- setosa vs virginica, 
-- versicolor vs verginica. 
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
-  geom_point()  + geom_hline(yintercept=.75)
-```
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
-  geom_point()  + geom_hline(yintercept=1.6)
-```
-
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
-  geom_point()  + geom_vline(xintercept=2.3)
-```
-
-```{r}
-ggplot(iris, aes(x = Petal.Length, y = Petal.Width, color = Species)) +
-  geom_point()  + geom_vline(xintercept=5)
-```
-
-It might be easier to boil down to 1 axis. 
-
-```{r}
-ggplot(iris, aes(x=Petal.Length, color=Species)) +
-  geom_histogram(fill="white")
-```
-
-```{r}
-ggplot(iris, aes(x=Petal.Length, color=Species)) +
-  geom_histogram(fill="white") + geom_vline(xintercept=2.3)
-```
-
-
-```{r}
-library(dplyr)
-iris2 <- iris %>% filter(Species != "virginica")
-iris2$Species <- droplevels(iris2$Species)
-iris2$versicolor <- ifelse(iris2$Species == "versicolor", 1, 0) 
-
-```
-
-```{r}
-ggplot(iris2, aes(x=Petal.Length, y=versicolor)) +
-  geom_point() +
-  geom_smooth(method = "lm", 
-    method.args = list(family = "binomial"), 
-    se =FALSE) + ggtitle("Predicting Category with Linear Regression")
-```
-
-
-```{r}
-ggplot(iris2, aes(x=Petal.Length, y=versicolor)) +
-  geom_point() +
-  geom_smooth(method = "glm", 
-    method.args = list(family = "binomial"), 
-    se = FALSE) + ggtitle("Predicting Category with Logistic Regression")
-```
-
-The above logistic regression model is much more able to follow the dots than the linear regression above. This new model is better but it also has a slighlty different interpretation. The sigmoid function is written as
-
-$$f(x) = \frac{1}{1+e^{-x}}$$
-
-```{r}
-sigmoid = function(x) {
-   1 / (1 + exp(-x))
-}
-x <- seq(-5, 5, 0.01)
-plot(x, sigmoid(x), col='blue', title = "Sigmoid Function")
-
-```
-In this case, what we are doing is getting your results from the logistic regression model and fitting it into this model. 
-
-
-```{r}
-lm2 <- lm(versicolor ~ Petal.Length, data = iris2)
-summary(lm2)
-stargazer(lm2)
-```
-
-You see how the values differ. 
-
-```{r}
-logisticmodel <- glm(versicolor ~ Petal.Length, family = "binomial", data = iris2)
-summary(logisticmodel)
-stargazer(logisticmodel)
-```
-
-#### Sigmoid Equation
-
-$$f(x) = \frac{1}{1+e^{-x}}$$
-
-##### Linear Regression Model
-
-$$f(x) = -46.2 + .336*Petal.Length$$
-##### Logistic 
-
-$$f(x) = \frac{1}{1+e^{-(-46.2 + .336*Petal.Length)}}$$
-After some mathematical manipulation you would get 
-
-$$p(x) = \frac{e^{(-46.2 + .336*Petal.Length)}}{1+e^{(-46.2 + .336*Petal.Length)}}$$
-
-
-The mathematical explanation of this is really out of the scope of the original talk...
-
-long story short, your equation below is an interpretation of log odds when it comes to probability. 
-
-This means that for a one-unit increase in Petal Length you expect a 39.07 increase in the log-odds that the iris plant is versicolor, holding all other independent variables constant.
-
-
-```{r}
-summary(logisticmodel)
-```
-
-if you want to make it even more interpretable, you would exponenitate the results and you would end up with the odds interpretation. As the petal length increases by a factor of 1, you would expect the odds of your flower being veriscolor to increase by exp(39.07) (which is alot). This is pretty true considering how well the logistic regression model holds. 
