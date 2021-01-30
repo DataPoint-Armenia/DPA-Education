@@ -19,7 +19,7 @@ We will review a basic overview of the following steps in data analysis:
 
 ### Setting Up R:
 
-We will go over this in more detail in our next workshop which will help you get oriented and set up! 
+If you're brand new to R, **welcome** recommend you check out [RSwirl](https://swirlstats.com/students.html) if you haven't already to learn how to set up R and learn some of the basics! 
 
 1. Create New Project (Via Github Repository) & Establish Working Directory \  
 2. Create a File (RMD) \  
@@ -35,9 +35,6 @@ library(zoo) # Manipulating Data
 library(maps) # Mapping Visualizations  
 library(ggplot2) # All Visualizations 
 library(ggthemes) # All Visualizations Themes 
-library(stargazer) # Pretty Regression Output
-library(forecast) # Forecast / Predictive Modeling
-
 ```
 
 ## Data Import and Cleaning
@@ -214,55 +211,16 @@ ggplot(finaldata_map, aes(x = long, y = lat, group = group)) + geom_polygon(aes(
 
 ## Predecitive Modeling: Regression & Classification 
 
-*Predictive modeling* is the problem of developing a model using historical data to make a prediction on new data where we do not have the answer. Predictive modeling can be described as the mathematical problem of approximating a mapping function (f) from input variables (X) to output variables (y). *Classification predictive modeling* is the task of approximating a mapping function (f) from input variables (X) to discrete output variables (y). The output variables are often called labels or categories. The mapping function predicts the class or category for a given observation. *Regression predictive modeling* is the task of approximating a mapping function (f) from input variables (X) to a continuous output variable (y). A continuous output variable is a real-value, such as an integer or floating point value. These are often quantities, such as amounts and sizes.
+*Predictive modeling* is the problem of developing a model using historical data to make a prediction on new data where we do not have the answer. Predictive modeling can be described as the mathematical problem of approximating a mapping function (f) from input variables (X) to output variables (y). *Classification Predictive Modeling* is the task of approximating a mapping function (f) from input variables (X) to discrete output variables (y). The output variables are often called labels or categories, for this we use *Logistic Regression* methods. The mapping function predicts the class or category for a given observation. *Regression Predictive Modeling* is the task of approximating a mapping function (f) from input variables (X) to a continuous output variable (y). A continuous output variable is a real-value, such as an integer or floating point value. These are often quantities, such as amounts and sizes, for this we use *Linear Regression*.
 
 *Information Source:* [Difference Between Classification and Regression in Machine Learning](https://machinelearningmastery.com/classification-versus-regression-in-machine-learning/#:~:text=There%20is%20an%20important%20difference,is%20about%20predicting%20a%20quantity.&text=That%20regression%20is%20the%20problem,quantity%20output%20for%20an%20example.). 
-
-*Data Source:* We will be using “nCOV2019”, an R package developed by Dr. Guangchuang Yu from Southern Medical University and accessible via his public [GitHub](https://github.com/YuLab-SMU/nCov2019). 
 
 *WHO ShinyApp*: [ShinyApp](https://worldhealthorg.shinyapps.io/covid/)
 
 *More Resources:* [Top 100 R resources on Novel COVID-19 Coronavirus](https://statsandr.com/blog/top-r-resources-on-covid-19-coronavirus/)
 
-**Citation**: Tianzhi Wu, Erqiang Hu, Xijin Ge, Guangchuang Yu. [Open-source analytics tools for studying the COVID-19 coronavirus outbreak](https://www.medrxiv.org/content/10.1101/2020.02.25.20027433v2). medRxiv, 2020.02.25.20027433. [doi:](https://doi.org/10.1101/2020.02.25.20027433)
-
-ATTEMPT #1
 ```{r}
-#https://towardsdatascience.com/visualize-the-pandemic-with-r-covid-19-c3443de3b4e4 
-#Link of Example I'm Following ^ 
 
-#Loading data from GitHub using the provided information
-library('remotes')
-remotes::install_github("GuangchuangYu/nCov2019", force = TRUE)
-library('nCov2019')
-
-y <- load_nCov2019(lang = 'en')
-data <- y['global']
-#data is the new global data set we're working with.
-
-usdata <- data %>% filter(data$country == "United States" & data$cum_confirm>100) %>% select(time,cum_confirm)
-ggplot(usdata, aes(x=time, y=cum_confirm)) + geom_line() + labs(x = "Date", y = "Cumulative Cases", title = "Total Confirmed Cases in the US Over Time")
-
-#We can see the cases grow at an exponential rate. In this case, we can apply a simple log-linear regression to model and predict the growth. 
-
-case <- ts(usdata$cum_confirm, start = 1, frequency = 1)
-#The function ts is used to create time-series objects.
-
-fit <- tslm(log(case) ~ trend)
-summary(fit)
-
-#tslm is used to fit linear models to time series including trend and seasonality components.
-
-forecast(fit, h=10)
-
-#Not sure where to go from here...
-
-```
-
-Attempt #2 
-```{r}
-hospitalization_data <- read_csv("Characteristics.csv", skip = 2)
-#Trying to divide this into a test set and train set then create a model to predict hospitalization rate based on given characteristics, but I feel that the data frame needs to be restructured and cleaned up first. 
 ```
 
 ### Linear Regression
