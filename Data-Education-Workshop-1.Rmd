@@ -29,12 +29,15 @@ If you're brand new to R, **welcome** recommend you check out [RSwirl](https://s
 
 ```{r}
 library(tidyr) # Getting Data in Tidy Format
-library(tidyverse) # Manipulating Data
+library(tidyverse) # Holy Grail
+library(dplyr) # Holy Grail Pt 2
 library(lubridate) # Manipulating Data
 library(zoo) # Manipulating Data
 library(maps) # Mapping Visualizations  
 library(ggplot2) # All Visualizations 
 library(ggthemes) # All Visualizations Themes 
+library(readxl) # Read in Excel Files 
+library(splitstackshape) #Prediction Modeling Functions
 ```
 
 ## Data Import and Cleaning
@@ -209,21 +212,71 @@ ggplot(finaldata_map, aes(x = long, y = lat, group = group)) + geom_polygon(aes(
   labs(title = "New confirmed cases per million on October 18, 2020") 
 ```
 
+## More COVID-19 Resources
+*WHO ShinyApp*: [ShinyApp](https://worldhealthorg.shinyapps.io/covid/)
+
+*More Resources:* [Top 100 R resources on Novel COVID-19 Coronavirus](https://statsandr.com/blog/top-r-resources-on-covid-19-coronavirus/)
+
+
 ## Predecitive Modeling: Regression & Classification 
 
 *Predictive modeling* is the problem of developing a model using historical data to make a prediction on new data where we do not have the answer. Predictive modeling can be described as the mathematical problem of approximating a mapping function (f) from input variables (X) to output variables (y). *Classification Predictive Modeling* is the task of approximating a mapping function (f) from input variables (X) to discrete output variables (y). The output variables are often called labels or categories, for this we use *Logistic Regression* methods. The mapping function predicts the class or category for a given observation. *Regression Predictive Modeling* is the task of approximating a mapping function (f) from input variables (X) to a continuous output variable (y). A continuous output variable is a real-value, such as an integer or floating point value. These are often quantities, such as amounts and sizes, for this we use *Linear Regression*.
 
 *Information Source:* [Difference Between Classification and Regression in Machine Learning](https://machinelearningmastery.com/classification-versus-regression-in-machine-learning/#:~:text=There%20is%20an%20important%20difference,is%20about%20predicting%20a%20quantity.&text=That%20regression%20is%20the%20problem,quantity%20output%20for%20an%20example.). 
 
-*WHO ShinyApp*: [ShinyApp](https://worldhealthorg.shinyapps.io/covid/)
+*Data Source:* [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php) 
 
-*More Resources:* [Top 100 R resources on Novel COVID-19 Coronavirus](https://statsandr.com/blog/top-r-resources-on-covid-19-coronavirus/)
+### Diabetes:
+
+We will be using the features available in this dataset to predict diabetes diagnosis [**Classification** aka **Logistic Regression**!]
 
 ```{r}
+diabetes <- read.csv(file="diabetes_data_upload.csv")
 
+diabetes_1 <- diabetes %>% select(-Age,-class,-Gender)
+diabetes_1 <- ifelse(diabetes_1 == "Yes", 1, 0)
+diabetes_1 <- as.data.frame(diabetes_1)
+diabetes_1 <- diabetes_1 %>% mutate(row.names(diabetes))
+View(diabetes_1)
+
+diabetes_2 <- diabetes %>% select(Age,class,Gender)
+diabetes_2 <- as.data.frame(diabetes_2)
+diabetes_2$class <- ifelse(diabetes_2$class == "Positive", 1, 0)
+diabetes_2$Gender <- ifelse(diabetes_2$Gender == "Male", 1, 0)
+diabetes_2 <- diabetes_2 %>% mutate(row.names(diabetes))
+View(diabetes_2)
+
+
+total <- merge(diabetes_1, diabetes_2, by="row.names(diabetes)")
+total <- total %>% select(-'row.names(diabetes)')
+View(total)
+```
+
+### Logistic Regression
+```{r}
+#Set Up Train Set and Test Set
+train_set <- total[1:260,]
+test_set_0 <- total[260:520,]
+test_set <- total[260:520,] %>% select(-class)
+new_data <- test_set%>%slice(1:10)
+
+#Create Logistic Model
+logistic_model <-glm(class ~ ., family = binomial, train_set)
+print(logistic_model)
+
+#Predict Test Set Results
+predicted <- predict(logistic_model, type = "response", newdata = new_data)
+observed <- test_set_0[1:10,]
+
+#Compare to Actual Observed Results
+print(predicted)
+print(observed$class)
+
+#Input New Values Into Model
+logistic_model_2 <-glm(class ~ Age + Obesity + Gender + Polyuria + Polydipsia + Polyphagia, family = binomial, train_set)
+new_data_2 <- data.frame(Age=40, Obesity = 0, Gender = 1, Polyuria = 0, Polydipsia = 1, Polyphagia = 1)
+predict(logistic_model_2, newdata = new_data_2, type="response")
 ```
 
 ### Linear Regression
-
-### Logitic Regression
 
