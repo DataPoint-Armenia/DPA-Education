@@ -19,7 +19,7 @@ We will review a basic overview of the following steps in data analysis:
 
 ### Setting Up R:
 
-If you're brand new to R, **welcome** recommend you check out [RSwirl](https://swirlstats.com/students.html) if you haven't already to learn how to set up R and learn some of the basics! 
+If you're brand new to R, **welcome** we recommend you check out [RSwirl](https://swirlstats.com/students.html) if you haven't already to learn how to set up R and learn some of the basics! 
 
 1. Create New Project (Via Github Repository) & Establish Working Directory \  
 2. Create a File (RMD) \  
@@ -38,6 +38,8 @@ library(ggplot2) # All Visualizations
 library(ggthemes) # All Visualizations Themes 
 library(readxl) # Read in Excel Files 
 library(splitstackshape) #Prediction Modeling Functions
+library(readxl) #Read In Excel Files 
+library(caret) #Confusion Matrix
 ```
 
 ## Data Import and Cleaning
@@ -224,10 +226,10 @@ ggplot(finaldata_map, aes(x = long, y = lat, group = group)) + geom_polygon(aes(
 
 *Information Source:* [Difference Between Classification and Regression in Machine Learning](https://machinelearningmastery.com/classification-versus-regression-in-machine-learning/#:~:text=There%20is%20an%20important%20difference,is%20about%20predicting%20a%20quantity.&text=That%20regression%20is%20the%20problem,quantity%20output%20for%20an%20example.). 
 
-*Data Source:* [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php) 
+## Logistic Regression:
 
 ### Diabetes:
-
+*Data Source:* [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/index.php) 
 We will be using the features available in this dataset to predict diabetes diagnosis [**Classification** aka **Logistic Regression**!]
 
 ```{r}
@@ -237,22 +239,18 @@ diabetes_1 <- diabetes %>% select(-Age,-class,-Gender)
 diabetes_1 <- ifelse(diabetes_1 == "Yes", 1, 0)
 diabetes_1 <- as.data.frame(diabetes_1)
 diabetes_1 <- diabetes_1 %>% mutate(row.names(diabetes))
-View(diabetes_1)
 
 diabetes_2 <- diabetes %>% select(Age,class,Gender)
 diabetes_2 <- as.data.frame(diabetes_2)
 diabetes_2$class <- ifelse(diabetes_2$class == "Positive", 1, 0)
 diabetes_2$Gender <- ifelse(diabetes_2$Gender == "Male", 1, 0)
 diabetes_2 <- diabetes_2 %>% mutate(row.names(diabetes))
-View(diabetes_2)
 
 
 total <- merge(diabetes_1, diabetes_2, by="row.names(diabetes)")
 total <- total %>% select(-'row.names(diabetes)')
-View(total)
 ```
 
-### Logistic Regression
 ```{r}
 #Set Up Train Set and Test Set
 train_set <- total[1:260,]
@@ -265,18 +263,83 @@ logistic_model <-glm(class ~ ., family = binomial, train_set)
 print(logistic_model)
 
 #Predict Test Set Results
-predicted <- predict(logistic_model, type = "response", newdata = new_data)
+predicted <- predict(logistic_model, type = "response",  newdata = new_data)
+predicted.class <- ifelse(predicted > 0.5, 1, 0)
+predicted.class <- as.factor(predicted.class)
 observed <- test_set_0[1:10,]
 
 #Compare to Actual Observed Results
 print(predicted)
 print(observed$class)
+print(predicted.class)
 
 #Input New Values Into Model
 logistic_model_2 <-glm(class ~ Age + Obesity + Gender + Polyuria + Polydipsia + Polyphagia, family = binomial, train_set)
 new_data_2 <- data.frame(Age=40, Obesity = 0, Gender = 1, Polyuria = 0, Polydipsia = 1, Polyphagia = 1)
-predict(logistic_model_2, newdata = new_data_2, type="response")
+predicted_2 <- predict(logistic_model_2, newdata = new_data_2, type="response")
+predicted.class.2 <- ifelse(predicted_2 > 0.5, 1, 0)
+
+#Prediction of diabetes diagnosis for a  non-obese 40 year old male who has experienced polydispsia and polyphagia but not polyuria.   
+print(predicted_2)
+print(predicted.class.2)
+```
+## Linear Regression
+
+### NHANES Study:
+The NHANES I Epidemiologic Follow-up Study (NHEFS) is a national longitudinal study designed to investigate the relationships between clinical, nutritional, and behavioral factors assessed in the first National Health and Nutrition Examination Survey NHANES I and subsequent morbidity, mortality, and hospital utilization, as well as changes in risk factors, functional limitation, and institutionalization.
+
+*Data Source:* [CDC: NHANES Study, NHEFS Dataset](https://wwwn.cdc.gov/nchs/nhanes/nhefs/default.aspx/) 
+We will be using the features available in this dataset to predict systolic blood pressure (which is a continuous outcome) [**Regression Predictive Modeling** aka **Linear Regression**!]
+
+```{r}
+data <- read_excel("nhefs.xlsx")
+attach(data)
+
+#Set Up Train Set and Test Set
+train_set_2 <- data[1:814,]
+test_set_0_2 <- data[814:1629,] %>% filter(!is.na(sbp)) %>%filter(!is.na(age)) %>% filter(!is.na(sex)) %>% filter(!is.na(race)) %>% filter(!is.na(wt71)) %>% filter(!is.na(smokeintensity)) %>% filter(!is.na(cholesterol)) %>% filter(!is.na(active))
+test_set_2 <- test_set_0_2 %>% select(-sbp)
+
+linear_model <- lm(sbp ~ age + sex + race + wt71 + smokeintensity + cholesterol + as.factor(active), data = train_set_2)
+
+summary(linear_model)
+
+linear_predicted <- predict(linear_model, newdata = test_set_2)
+linear_predicted <- as.data.frame(linear_predicted)
+
+
+new_df <- test_set_0_2 %>% mutate(prediction = linear_predicted)
+new_df <- new_df %>% select(sbp, prediction)
+
+#Mean Absolute Error 
+((sum(abs(new_df$sbp - new_df$prediction)))/ 772)
+#13.31118
+
 ```
 
-### Linear Regression
+Lets try to refine our model by adding some more variables...
 
+```{r}
+#Set Up Train Set and Test Set
+train_set_2.1 <- data[1:814,]
+test_set_0_2.1 <- data[814:1629,] %>% filter(!is.na(sbp)) %>%filter(!is.na(age)) %>% filter(!is.na(sex)) %>% filter(!is.na(race)) %>% filter(!is.na(wt71)) %>% filter(!is.na(smokeintensity)) %>% filter(!is.na(cholesterol)) %>% filter(!is.na(active)) %>% filter(!is.na(hbpmed)) %>% filter(!is.na(hbp)) %>% filter(!is.na(alcoholfreq))
+test_set_0_2.1 <- test_set_0_2.1 %>% filter(hbpmed !=2) %>% filter(hbp !=2) %>% filter(alcoholfreq != 5)
+test_set_2.1 <- test_set_0_2.1 %>% select(-sbp)
+
+linear_model_2 <- lm(sbp ~ age + sex + race + wt71 + smokeintensity + cholesterol + as.factor(active) + as.factor(hbp) + as.factor(hbpmed) + as.factor(alcoholfreq), data = train_set_2.1)
+
+summary(linear_model_2)
+
+linear_predicted_2 <- predict(linear_model_2, newdata = test_set_2.1)
+linear_predicted_2 <- as.data.frame(linear_predicted_2)
+
+
+new_df_2 <- test_set_0_2.1 %>% mutate(prediction = linear_predicted_2)
+new_df_2 <- new_df_2 %>% select(sbp, prediction)
+
+#Mean Absolute Error 
+((sum(abs(new_df_2$sbp - new_df_2$prediction)))/ 24)
+#12.61021
+
+#Slightly more accurate! 
+```
