@@ -26,6 +26,7 @@ If you're brand new to R, **welcome** we recommend you check out [RSwirl](https:
 3. Load Packages Chunk \  
 
 ### Load Packages:
+First use install.packages() then library()
 
 ```{r}
 library(tidyr) # Getting Data in Tidy Format
@@ -52,6 +53,7 @@ Step 3: Data Cleaning!
 ```{r}
 #Reading in the case data
 cases <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
+head(cases)
 ``` 
 
 Reshape the data to long format, so that instead of having many columns of cases for each date, you have one column that stores the cases and one column that stores the dates. 
@@ -59,6 +61,7 @@ Reshape the data to long format, so that instead of having many columns of cases
 ```{r}
 cases_long <- cases %>% gather(date, cases, "1/22/20":"10/31/20") 
 #Along the way you can "View" your data set, but be sure to remove the "View" code from your final RMD before you knit it into an HTML otherwise the whole table will print in the HTML. 
+head(cases_long)
 ```
 
 Convert the new date column to be a date class instead of a character class. 
@@ -82,6 +85,7 @@ We can do this by summing up the cases across all of the states/provinces within
 
 ```{r}
 cases_long_country <- cases_long %>% rename(country ="Country/Region") %>%  group_by(country, date) %>% summarize(cases=sum(cases), .groups = "drop") 
+head(cases_long_country)
 ```
 
 So now we're ready for the fun part!
@@ -149,6 +153,7 @@ Now its time to account for population in our data analysis. Let's do this by cr
 
 ```{r}
 finaldata <- finaldata %>% mutate(rollingavg_per_million = 1e6*new_cases_7dayavg/population)
+View(finaldata)
 ```
 
 Let's Plot It Round 4! 
@@ -195,7 +200,7 @@ world_map = world_map %>% mutate(region=recode(region, !!!recode_map))
 # Only three countries in finaldata don't match with anything in world_map
 setdiff(finaldata$country, world_map$region)
 
-# Filter finaldata for October 18, 2020 (3 weeks after the start of the war) and join with world map data
+# Filter finaldata for October 18, 2020 (3 weeks after the start of the war) and join with world map data (choose a date!)
 finaldata_map = finaldata %>% filter(date==date("2020-10-18")) %>% left_join(world_map, by=c("country"="region"))
 ```
 
@@ -234,6 +239,9 @@ We will be using the features available in this dataset to predict diabetes diag
 
 ```{r}
 diabetes <- read.csv(file="diabetes_data_upload.csv")
+head(diabetes)
+
+#Visualization (bar and age scatter plot) 
 
 diabetes_1 <- diabetes %>% select(-Age,-class,-Gender)
 diabetes_1 <- ifelse(diabetes_1 == "Yes", 1, 0)
@@ -249,6 +257,7 @@ diabetes_2 <- diabetes_2 %>% mutate(row.names(diabetes))
 
 total <- merge(diabetes_1, diabetes_2, by="row.names(diabetes)")
 total <- total %>% select(-'row.names(diabetes)')
+head(total)
 ```
 
 ```{r}
@@ -295,6 +304,9 @@ We will be using the features available in this dataset to predict systolic bloo
 data <- read_excel("nhefs.xlsx")
 attach(data)
 
+#Linear relationship plot scatterplot 
+#SHOW WITH ONLY ONE VARIABLE ON SCATTER PLOT AND SAME SINGLE VAR MODEL 
+
 #Set Up Train Set and Test Set
 train_set_2 <- data[1:814,]
 test_set_0_2 <- data[814:1629,] %>% filter(!is.na(sbp)) %>%filter(!is.na(age)) %>% filter(!is.na(sex)) %>% filter(!is.na(race)) %>% filter(!is.na(wt71)) %>% filter(!is.na(smokeintensity)) %>% filter(!is.na(cholesterol)) %>% filter(!is.na(active))
@@ -310,6 +322,7 @@ linear_predicted <- as.data.frame(linear_predicted)
 
 new_df <- test_set_0_2 %>% mutate(prediction = linear_predicted)
 new_df <- new_df %>% select(sbp, prediction)
+
 
 #Mean Absolute Error 
 ((sum(abs(new_df$sbp - new_df$prediction)))/ 772)
