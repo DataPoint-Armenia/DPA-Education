@@ -26,6 +26,7 @@ If you're brand new to R, **welcome** we recommend you check out [RSwirl](https:
 3. Load Packages Chunk \  
 
 ### Load Packages:
+
 First use install.packages() then library()
 
 ```{r}
@@ -54,13 +55,13 @@ Step 3: Data Cleaning!
 #Reading in the case data
 cases <- read_csv("https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
 head(cases)
+#Check First and Last Date 
 ``` 
 
 Reshape the data to long format, so that instead of having many columns of cases for each date, you have one column that stores the cases and one column that stores the dates. 
 
 ```{r}
-cases_long <- cases %>% gather(date, cases, "1/22/20":"10/31/20") 
-#Along the way you can "View" your data set, but be sure to remove the "View" code from your final RMD before you knit it into an HTML otherwise the whole table will print in the HTML. 
+cases_long <- cases %>% gather(date, cases, '1/22/20':'2/19/21') #Check Latest Date
 head(cases_long)
 ```
 
@@ -120,6 +121,7 @@ Lets try to make a new variable that calculates that.We will define the seven-da
 ```{r}
 cases_long_country <- cases_long_country %>% group_by(country) %>% arrange(date) %>%
 mutate(new_cases = cases - lag(cases), new_cases_7dayavg = rollmean(new_cases, k = 7, fill = NA)) %>% ungroup()
+view(cases_long_country)
 ```
 
 Let's Plot It! 
@@ -200,8 +202,8 @@ world_map = world_map %>% mutate(region=recode(region, !!!recode_map))
 # Only three countries in finaldata don't match with anything in world_map
 setdiff(finaldata$country, world_map$region)
 
-# Filter finaldata for October 18, 2020 (3 weeks after the start of the war) and join with world map data (choose a date!)
-finaldata_map = finaldata %>% filter(date==date("2020-10-18")) %>% left_join(world_map, by=c("country"="region"))
+# Filter finaldata for a specific data and join with world map data! (Choose a Date) 
+finaldata_map = finaldata %>% filter(date==date("2021-1-01")) %>% left_join(world_map, by=c("country"="region"))
 ```
 
 *Heatmap of Cases Per Million on October 18, 2020*
@@ -216,10 +218,10 @@ ggplot(finaldata_map, aes(x = long, y = lat, group = group)) + geom_polygon(aes(
   scale_fill_viridis_c(name = "New cases/mill \n(7-day avg)", 
                        option = "inferno", 
                        trans = "log10") + 
-  labs(title = "New confirmed cases per million on October 18, 2020") 
+  labs(title = "New confirmed cases per million on DATE")  #Update Date for Title
 ```
 
-## More COVID-19 Resources
+### More COVID-19 Resources
 *WHO ShinyApp*: [ShinyApp](https://worldhealthorg.shinyapps.io/covid/)
 
 *More Resources:* [Top 100 R resources on Novel COVID-19 Coronavirus](https://statsandr.com/blog/top-r-resources-on-covid-19-coronavirus/)
@@ -241,7 +243,14 @@ We will be using the features available in this dataset to predict diabetes diag
 diabetes <- read.csv(file="diabetes_data_upload.csv")
 head(diabetes)
 
-#Visualization (bar and age scatter plot) 
+#good predictors!
+ggplot(diabetes, aes(x=as.factor(class), fill=Polyuria)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
+ggplot(diabetes, aes(x=as.factor(class), fill=Polyphagia)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
+ggplot(diabetes, aes(x=as.factor(class), fill=Polydipsia)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
+
+#not so good predictors!
+ggplot(diabetes, aes(x=as.factor(class), fill=Itching)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
+ggplot(diabetes, aes(x=as.factor(class), fill=delayed.healing)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
 
 diabetes_1 <- diabetes %>% select(-Age,-class,-Gender)
 diabetes_1 <- ifelse(diabetes_1 == "Yes", 1, 0)
@@ -282,7 +291,7 @@ print(predicted)
 print(observed$class)
 print(predicted.class)
 
-#Input New Values Into Model
+#Input New Values Into Model (Choose Some Values!)
 logistic_model_2 <-glm(class ~ Age + Obesity + Gender + Polyuria + Polydipsia + Polyphagia, family = binomial, train_set)
 new_data_2 <- data.frame(Age=40, Obesity = 0, Gender = 1, Polyuria = 0, Polydipsia = 1, Polyphagia = 1)
 predicted_2 <- predict(logistic_model_2, newdata = new_data_2, type="response")
@@ -304,55 +313,59 @@ We will be using the features available in this dataset to predict systolic bloo
 data <- read_excel("nhefs.xlsx")
 attach(data)
 
-#Linear relationship plot scatterplot 
-#SHOW WITH ONLY ONE VARIABLE ON SCATTER PLOT AND SAME SINGLE VAR MODEL 
+ggplot(data, aes(x=cholesterol, y=sbp)) + geom_point()  + xlab("Cholesterol") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm)
+ggplot(data, aes(x=age, y=sbp)) + geom_point()  + xlab("Cholesterol") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm)
 
 #Set Up Train Set and Test Set
 train_set_2 <- data[1:814,]
-test_set_0_2 <- data[814:1629,] %>% filter(!is.na(sbp)) %>%filter(!is.na(age)) %>% filter(!is.na(sex)) %>% filter(!is.na(race)) %>% filter(!is.na(wt71)) %>% filter(!is.na(smokeintensity)) %>% filter(!is.na(cholesterol)) %>% filter(!is.na(active))
+test_set_0_2 <- data[814:1629,] %>% filter(!is.na(sbp)) %>%filter(!is.na(age)) %>% filter(!is.na(cholesterol))
 test_set_2 <- test_set_0_2 %>% select(-sbp)
 
-linear_model <- lm(sbp ~ age + sex + race + wt71 + smokeintensity + cholesterol + as.factor(active), data = train_set_2)
+linear_model <- lm(sbp ~ age + cholesterol, data = train_set_2)
 
 summary(linear_model)
 
 linear_predicted <- predict(linear_model, newdata = test_set_2)
 linear_predicted <- as.data.frame(linear_predicted)
 
+linear_observed <- test_set_0_2 %>% select(sbp)
+linear_predicted[1:10,]
+linear_observed[1:10,]
 
 new_df <- test_set_0_2 %>% mutate(prediction = linear_predicted)
 new_df <- new_df %>% select(sbp, prediction)
 
-
 #Mean Absolute Error 
 ((sum(abs(new_df$sbp - new_df$prediction)))/ 772)
-#13.31118
-
+#13.71362
 ```
 
 Lets try to refine our model by adding some more variables...
 
 ```{r}
+ggplot(data, aes(x=wt82, y=sbp)) + geom_point()  + xlab("Weight") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm)
+ggplot(data, aes(x=as.factor(hbp), y=sbp)) + geom_boxplot()  + xlab("High Blood Pressure in 1971") + ylab("SBP in 1982")
+ggplot(data, aes(x=as.factor(hbpmed), y=sbp)) + geom_boxplot()  + xlab("High Blood Pressure Meds in 1971") + ylab("SBP in 1982")
+
 #Set Up Train Set and Test Set
 train_set_2.1 <- data[1:814,]
-test_set_0_2.1 <- data[814:1629,] %>% filter(!is.na(sbp)) %>%filter(!is.na(age)) %>% filter(!is.na(sex)) %>% filter(!is.na(race)) %>% filter(!is.na(wt71)) %>% filter(!is.na(smokeintensity)) %>% filter(!is.na(cholesterol)) %>% filter(!is.na(active)) %>% filter(!is.na(hbpmed)) %>% filter(!is.na(hbp)) %>% filter(!is.na(alcoholfreq))
-test_set_0_2.1 <- test_set_0_2.1 %>% filter(hbpmed !=2) %>% filter(hbp !=2) %>% filter(alcoholfreq != 5)
+test_set_0_2.1 <- data[814:1629,] %>% filter(!is.na(sbp)) %>%filter(!is.na(age)) %>% filter(!is.na(sex)) %>% filter(!is.na(race)) %>% filter(!is.na(wt82)) %>% filter(!is.na(hbp)) %>% filter(!is.na(cholesterol)) %>% filter(!is.na(hbpmed))
+test_set_0_2.1 <- test_set_0_2.1 %>% filter(hbpmed !=2) %>% filter(hbp !=2)
 test_set_2.1 <- test_set_0_2.1 %>% select(-sbp)
 
-linear_model_2 <- lm(sbp ~ age + sex + race + wt71 + smokeintensity + cholesterol + as.factor(active) + as.factor(hbp) + as.factor(hbpmed) + as.factor(alcoholfreq), data = train_set_2.1)
+linear_model_2 <- lm(sbp ~ age + sex + race + wt82 + cholesterol + as.factor(hbpmed) + as.factor(hbp), data = train_set_2.1)
 
 summary(linear_model_2)
 
 linear_predicted_2 <- predict(linear_model_2, newdata = test_set_2.1)
 linear_predicted_2 <- as.data.frame(linear_predicted_2)
 
-
 new_df_2 <- test_set_0_2.1 %>% mutate(prediction = linear_predicted_2)
 new_df_2 <- new_df_2 %>% select(sbp, prediction)
 
 #Mean Absolute Error 
 ((sum(abs(new_df_2$sbp - new_df_2$prediction)))/ 24)
-#12.61021
+#12.4005
 
 #Slightly more accurate! 
 ```
