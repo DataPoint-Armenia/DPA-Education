@@ -263,7 +263,6 @@ diabetes_2$class <- ifelse(diabetes_2$class == "Positive", 1, 0)
 diabetes_2$Gender <- ifelse(diabetes_2$Gender == "Male", 1, 0)
 diabetes_2 <- diabetes_2 %>% mutate(row.names(diabetes))
 
-
 total <- merge(diabetes_1, diabetes_2, by="row.names(diabetes)")
 total <- total %>% select(-'row.names(diabetes)')
 head(total)

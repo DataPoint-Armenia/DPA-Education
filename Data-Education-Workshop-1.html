@@ -718,7 +718,6 @@ diabetes_2$class &lt;- ifelse(diabetes_2$class == &quot;Positive&quot;, 1, 0)
 diabetes_2$Gender &lt;- ifelse(diabetes_2$Gender == &quot;Male&quot;, 1, 0)
 diabetes_2 &lt;- diabetes_2 %&gt;% mutate(row.names(diabetes))
 
-
 total &lt;- merge(diabetes_1, diabetes_2, by=&quot;row.names(diabetes)&quot;)
 total &lt;- total %&gt;% select(-&#39;row.names(diabetes)&#39;)
 head(total)</code></pre>
@@ -875,7 +874,6 @@ linear_predicted[1:10,]</code></pre>
 ## 10   111</code></pre>
 <pre class="r"><code>new_df &lt;- test_set_0_2 %&gt;% mutate(prediction = linear_predicted)
 new_df &lt;- new_df %&gt;% select(sbp, prediction)
-
 
 #Mean Absolute Error 
 ((sum(abs(new_df$sbp - new_df$prediction)))/ 772)</code></pre>
