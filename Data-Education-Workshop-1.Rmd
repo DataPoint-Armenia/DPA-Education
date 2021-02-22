@@ -244,13 +244,13 @@ diabetes <- read.csv(file="diabetes_data_upload.csv")
 head(diabetes)
 
 #good predictors!
-ggplot(diabetes, aes(x=as.factor(class), fill=Polyuria)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
-ggplot(diabetes, aes(x=as.factor(class), fill=Polyphagia)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
-ggplot(diabetes, aes(x=as.factor(class), fill=Polydipsia)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
+ggplot(diabetes, aes(x=as.factor(class), fill=Polyuria)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count") + ggtitle("Relationship Between Polyuria and Diabetes Diagnosis")
+ggplot(diabetes, aes(x=as.factor(class), fill=Polyphagia)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")+ggtitle("Relationship Between Polyphagia and Diabetes Diagnosis")
+ggplot(diabetes, aes(x=as.factor(class), fill=Polydipsia)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")+ggtitle("Relationship Between Polydipsia and Diabetes Diagnosis")
 
 #not so good predictors!
-ggplot(diabetes, aes(x=as.factor(class), fill=Itching)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
-ggplot(diabetes, aes(x=as.factor(class), fill=delayed.healing)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count")
+ggplot(diabetes, aes(x=as.factor(class), fill=Itching)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count") +ggtitle("Relationship Between Itching and Diabetes Diagnosis")
+ggplot(diabetes, aes(x=as.factor(class), fill=delayed.healing)) + geom_bar()  + xlab("Diabetes Diagnosis") + ylab("Count") +ggtitle("Relationship Between Delayed Healing and Diabetes Diagnosis")
 
 diabetes_1 <- diabetes %>% select(-Age,-class,-Gender)
 diabetes_1 <- ifelse(diabetes_1 == "Yes", 1, 0)
@@ -312,8 +312,8 @@ We will be using the features available in this dataset to predict systolic bloo
 data <- read_excel("nhefs.xlsx")
 attach(data)
 
-ggplot(data, aes(x=cholesterol, y=sbp)) + geom_point()  + xlab("Cholesterol") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm)
-ggplot(data, aes(x=age, y=sbp)) + geom_point()  + xlab("Cholesterol") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm)
+ggplot(data, aes(x=cholesterol, y=sbp)) + geom_point()  + xlab("Cholesterol") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm) +ggtitle("Relationship Between Cholesterol and SBP")
+ggplot(data, aes(x=age, y=sbp)) + geom_point()  + xlab("Age") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm) +ggtitle("Relationship Between Age and SBP")
 
 #Set Up Train Set and Test Set
 train_set_2 <- data[1:814,]
@@ -342,9 +342,9 @@ new_df <- new_df %>% select(sbp, prediction)
 Lets try to refine our model by adding some more variables...
 
 ```{r}
-ggplot(data, aes(x=wt82, y=sbp)) + geom_point()  + xlab("Weight") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm)
-ggplot(data, aes(x=as.factor(hbp), y=sbp)) + geom_boxplot()  + xlab("High Blood Pressure in 1971") + ylab("SBP in 1982")
-ggplot(data, aes(x=as.factor(hbpmed), y=sbp)) + geom_boxplot()  + xlab("High Blood Pressure Meds in 1971") + ylab("SBP in 1982")
+ggplot(data, aes(x=wt82, y=sbp)) + geom_point()  + xlab("Weight") + ylab("Systolic Blood Pressure") + geom_smooth(method=lm) +ggtitle("Relationship Between Weight and SBP")
+ggplot(data, aes(x=as.factor(hbp), y=sbp)) + geom_boxplot()  + xlab("High Blood Pressure in 1971") + ylab("SBP in 1982") +ggtitle("Relationship Between HBP in 1971 and SBP in 1982")
+ggplot(data, aes(x=as.factor(hbpmed), y=sbp)) + geom_boxplot()  + xlab("High Blood Pressure Meds in 1971") + ylab("SBP in 1982") +ggtitle("Relationship Between Using HBP Meds in 1971 and SBP in 1982")
 
 #Set Up Train Set and Test Set
 train_set_2.1 <- data[1:814,]
